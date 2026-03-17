@@ -1,0 +1,86 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "windows",
+      "displayName": "Windows - Visual Studio",
+      "description": "Configure using Visual Studio generator on Windows.",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/windows",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "linux",
+      "displayName": "Linux - Ninja Multi-Config",
+      "description": "Configure using Ninja Multi-Config generator on Linux.",
+      "generator": "Ninja Multi-Config",
+      "binaryDir": "${sourceDir}/build/linux",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-release",
+      "configurePreset": "windows",
+      "description": "Build Common Lib using Visual Studio Release configuration.",
+      "hidden": false,
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-debug",
+      "configurePreset": "windows",
+      "description": "Build Common Lib using Visual Studio Debug configuration.",
+      "hidden": false,
+      "configuration": "Debug"
+    },
+    {
+      "name": "linux-release",
+      "configurePreset": "linux",
+      "description": "Build Common Lib using Ninja Multi-Config Release configuration.",
+      "hidden": false,
+      "configuration": "Release"
+    },
+    {
+      "name": "linux-debug",
+      "configurePreset": "linux",
+      "description": "Build Common Lib using Ninja Multi-Config Debug configuration.",
+      "hidden": false,
+      "configuration": "Debug"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "windows-test",
+      "configurePreset": "windows",
+      "description": "Run tests for Common Lib on Windows after build.",
+      "hidden": false,
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-test",
+      "configurePreset": "linux",
+      "description": "Run tests for Common Lib on Linux after build.",
+      "hidden": false,
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+
+  ]
+}

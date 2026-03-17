@@ -1,0 +1,92 @@
+/**
+ * @file ThreadPool.h
+ * @brief Abstract ThreadPool interface for concurrent task execution.
+ * 
+ * Copyright (c) 2026 Stephen Kouretas. All Rights Reserved.
+ *
+ * @author Stephen Kouretas <stephen.kouretas@gmail.com>
+ * @date Created: January 25, 2026
+ */
+#ifndef SK_COMMON_CONCURRENT_THREADPOOL_H
+#define SK_COMMON_CONCURRENT_THREADPOOL_H
+
+#include <future>
+#include <functional>
+#include <memory>
+#include <type_traits>
+
+namespace sk {
+namespace common {
+namespace concurrent {
+
+/**
+ * @brief Abstract interface for ThreadPool implementations.
+ */
+class ThreadPool {
+public:
+    virtual ~ThreadPool() = default;
+
+    /**
+     * @brief Standard submission: Task only.
+     * Use lambdas to bind arguments: pool->submit([=]{ return myFunc(a, b); });
+     */
+    template<typename F>
+    auto submit(F&& task) -> std::future<typename std::result_of<F()>::type> {
+        using return_type = typename std::result_of<F()>::type;
+
+        auto promise = std::make_shared<std::promise<return_type>>();
+        std::future<return_type> res = promise->get_future();
+
+        this->enqueue([t = std::forward<F>(task), p = promise]() mutable {
+            try {
+                p->set_value(t());
+            } catch (...) {
+                p->set_exception(std::current_exception());
+            }
+        });
+
+        return res;
+    }
+
+    /**
+     * @brief Hybrid submission: Task + Async Callback.
+     * The callback is triggered on the worker thread as soon as the task completes.
+     */
+    template<typename F, typename C>
+    auto submit(F&& task, C&& callback) -> std::future<typename std::result_of<F()>::type> {
+        using return_type = typename std::result_of<F()>::type;
+
+        auto promise = std::make_shared<std::promise<return_type>>();
+        std::future<return_type> res = promise->get_future();
+
+        this->enqueue([t = std::forward<F>(task), cb = std::forward<C>(callback), p = promise]() mutable {
+            try {
+                return_type result = t();
+                p->set_value(result); // Fulfill the future
+                cb(result);           // Trigger the callback async
+            } catch (...) {
+                p->set_exception(std::current_exception());
+            }
+        });
+
+        return res;
+    }
+
+    virtual void shutdown() = 0;
+    virtual size_t getPoolSize() const = 0;
+
+protected:
+    /**
+     * @brief The internal sink for all work. 
+     * Implementations like FixedThreadPool only need to override this.
+     */
+    virtual void enqueue(std::function<void()> work) = 0;
+};
+
+using ThreadPoolPtr = std::shared_ptr<ThreadPool>;
+
+} // namespace concurrent
+} // namespace common
+} // namespace sk
+
+#endif // SK_COMMON_CONCURRENT_THREADPOOL_H
