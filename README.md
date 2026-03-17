@@ -2,7 +2,10 @@
 C++ Common Libraries and utilities
 
 ## Purpose
-TODO:
+`sk::common` is a comprehensive C++ utility library providing reusable, production-grade components for common programming tasks. This library aims to reduce boilerplate code and provide robust, well-tested implementations of frequently needed functionality.
+
+Current Components
+- Concurrent Utilities — Thread pool implementations for managing asynchronous task execution and worker thread management
 
 ## Example Usage
 
