@@ -9,7 +9,7 @@ Current Components
 
 ## Example Usage
 
-## BUild Instructions
+## Build Instructions
 
 ### 1. Install Conan (v2)
 
