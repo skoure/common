@@ -44,6 +44,7 @@ private:
     std::list<std::thread> m_workers;
     
     // Shared synchronization primitives
+    mutable std::mutex m_workersMutex;
     std::mutex m_mutex;
     std::condition_variable m_cv;
     std::atomic<bool> m_isShutdown{false};

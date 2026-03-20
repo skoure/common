@@ -12,6 +12,7 @@
 namespace sk { namespace common { namespace concurrent {
 
 FixedThreadPool::FixedThreadPool(int numThreads) : m_isShutdown(false){
+    std::unique_lock<std::mutex> lock(m_workersMutex);
     for (int i = 0; i < numThreads; ++i) {
         m_workers.emplace_back(&FixedThreadPool::workerLoop, this);
     }
@@ -64,6 +65,7 @@ void FixedThreadPool::shutdown() {
     
     m_cv.notify_all(); // Wake up all threads to exit
     
+    std::unique_lock<std::mutex> lock(m_workersMutex);
     for (auto& worker : m_workers) {
         if (worker.joinable()) {
             worker.join();
@@ -73,6 +75,7 @@ void FixedThreadPool::shutdown() {
 }
 
 size_t FixedThreadPool::getPoolSize() const {
+    std::unique_lock<std::mutex> lock(m_workersMutex);
     return m_workers.size();
 }
 
