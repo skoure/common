@@ -19,6 +19,16 @@ namespace sk {
 namespace common {
 namespace concurrent {
 
+#if __cplusplus >= 201703L
+    // C++17 and later - invoke_result_t
+    template<typename F>
+    using result_of_t = std::invoke_result_t<F>;
+#else
+    // C++14 - result_of
+    template<typename F>
+    using result_of_t = typename std::result_of<F()>::type;
+#endif
+
 /**
  * @brief Abstract interface for ThreadPool implementations.
  */
@@ -31,8 +41,8 @@ public:
      * Use lambdas to bind arguments: pool->submit([=]{ return myFunc(a, b); });
      */
     template<typename F>
-    auto submit(F&& task) -> std::future<typename std::result_of<F()>::type> {
-        using return_type = typename std::result_of<F()>::type;
+    auto submit(F&& task) -> std::future<result_of_t<F>> {
+        using return_type = result_of_t<F>;
 
         auto promise = std::make_shared<std::promise<return_type>>();
         std::future<return_type> res = promise->get_future();
@@ -53,8 +63,8 @@ public:
      * The callback is triggered on the worker thread as soon as the task completes.
      */
     template<typename F, typename C>
-    auto submit(F&& task, C&& callback) -> std::future<typename std::result_of<F()>::type> {
-        using return_type = typename std::result_of<F()>::type;
+    auto submit(F&& task, C&& callback) -> std::future<result_of_t<F>> {
+        using return_type = result_of_t<F>;
 
         auto promise = std::make_shared<std::promise<return_type>>();
         std::future<return_type> res = promise->get_future();
