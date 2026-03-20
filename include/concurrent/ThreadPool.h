@@ -29,6 +29,31 @@ namespace concurrent {
     using result_of_t = typename std::result_of<F()>::type;
 #endif
 
+template<typename F, typename P>
+static void invoke_and_set(F& t, P& p, std::true_type) {
+    t();
+    p->set_value();
+}
+
+template<typename F, typename P>
+static void invoke_and_set(F& t, P& p, std::false_type) {
+    p->set_value(t());
+}
+
+template<typename F, typename C, typename P>
+static void invoke_and_set(F& t, C& cb, P& p, std::true_type) {
+    t();
+    p->set_value();
+    cb();
+}
+
+template<typename F, typename C, typename P>
+static void invoke_and_set(F&t, C& cb, P& p, std::false_type) {
+    auto result = t();
+    p->set_value(result);
+    cb(result);
+}
+
 /**
  * @brief Abstract interface for ThreadPool implementations.
  */
@@ -49,12 +74,7 @@ public:
 
         this->enqueue([t = std::forward<F>(task), p = promise]() mutable {
             try {
-                if constexpr (std::is_void<return_type>::value) {
-                    t();
-                    p->set_value();
-                } else {
-                    p->set_value(t());
-                }
+                invoke_and_set(t, p, std::is_void<return_type>{});
             } catch (...) {
                 p->set_exception(std::current_exception());
             }
@@ -76,15 +96,7 @@ public:
 
         this->enqueue([t = std::forward<F>(task), cb = std::forward<C>(callback), p = promise]() mutable {
             try {
-                if constexpr (std::is_void<return_type>::value) {
-                    t();
-                    p->set_value();
-                    cb();
-                } else {
-                    return_type result = t();
-                    p->set_value(result);
-                    cb(result);
-                }
+                invoke_and_set(t, cb, p, std::is_void<return_type>{});
             } catch (...) {
                 p->set_exception(std::current_exception());
             }
