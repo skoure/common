@@ -52,6 +52,23 @@ TYPED_TEST(ThreadPoolContractTest, BasicArithmeticTask) {
     EXPECT_EQ(future.get(), 30);
 }
 
+/**
+ * @brief Verifies that tasks with void return type work correctly.
+ */
+TYPED_TEST(ThreadPoolContractTest, VoidReturnTypeTask) {
+    std::atomic<int> taskValue{0};
+    const int expectedValue = 67;
+    
+    auto future = this->m_pool->submit([&taskValue, expectedValue]() {
+        taskValue = expectedValue;
+    });
+
+    EXPECT_TRUE(future.valid()); // Ensure we actually got a usable future back
+    // For void tasks, get() should not throw and just wait for completion
+    future.get();
+    EXPECT_EQ(taskValue, expectedValue);
+}
+
 TYPED_TEST(ThreadPoolContractTest, MultipleParallelTasks) {
     const int taskCount = 10;
     std::vector<std::future<int>> futures;

@@ -49,7 +49,12 @@ public:
 
         this->enqueue([t = std::forward<F>(task), p = promise]() mutable {
             try {
-                p->set_value(t());
+                if constexpr (std::is_void<return_type>::value) {
+                    t();
+                    p->set_value();
+                } else {
+                    p->set_value(t());
+                }
             } catch (...) {
                 p->set_exception(std::current_exception());
             }
@@ -71,9 +76,15 @@ public:
 
         this->enqueue([t = std::forward<F>(task), cb = std::forward<C>(callback), p = promise]() mutable {
             try {
-                return_type result = t();
-                p->set_value(result); // Fulfill the future
-                cb(result);           // Trigger the callback async
+                if constexpr (std::is_void<return_type>::value) {
+                    t();
+                    p->set_value();
+                    cb();
+                } else {
+                    return_type result = t();
+                    p->set_value(result);
+                    cb(result);
+                }
             } catch (...) {
                 p->set_exception(std::current_exception());
             }
