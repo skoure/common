@@ -9,6 +9,55 @@ Current Components
 
 ## Example Usage
 
+### Thread Pool
+
+#### Basic (future-based)
+Parameters are passed via lambda capture since `submit` takes a no-argument callable.
+```cpp
+#include <concurrent/ThreadPoolFactory.h>
+#include <iostream>
+
+using namespace sk::common::concurrent;
+
+std::string greet(const std::string& name) {
+  return "Hello, " + name;
+}
+
+int main() {
+  auto pool = ThreadPoolFactory::createFixedThreadPool(5);
+
+  std::string name = "World";
+  auto future = pool->submit([name]() { return greet(name); });
+  std::cout << future.get() << std::endl; // prints: Hello, World
+  pool->shutdown();
+}
+```
+
+#### With Callback
+The callback runs on the worker thread immediately after the task completes,
+receiving the task's return value as its argument.
+```cpp
+#include <concurrent/ThreadPoolFactory.h>
+#include <iostream>
+
+using namespace sk::common::concurrent;
+
+int main() {
+  auto pool = ThreadPoolFactory::createFixedThreadPool(5);
+
+  auto future = pool->submit(
+    []() { return 42; },
+    [](int result) { std::cout << "Callback received: " << result << std::endl; }
+  );
+
+  future.get(); // wait for completion (callback has already fired by now)
+  pool->shutdown();
+}
+```
+
+> **Note:** For `void` tasks, the callback takes no arguments: `[]() { /* done */ }`.
+> The callback fires on the **worker thread**, so avoid blocking or heavy work in it.
+
 ## Build Instructions
 
 ### 1. Install Conan (v2)
