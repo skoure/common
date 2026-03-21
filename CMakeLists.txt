@@ -37,8 +37,17 @@ install(TARGETS ${LIBRARY_NAME}
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin)
 
-# Install public headers from include/common
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/common DESTINATION include)
+# Install public headers
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/concurrent DESTINATION include)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/containers DESTINATION include)
+
+# Interface target so consumers can use target_link_libraries(foo PRIVATE sk::common)
+add_library(sk_common INTERFACE)
+target_include_directories(sk_common INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+add_library(sk::common ALIAS sk_common)
 
 # Doxygen documentation target (optional)
 find_package(Doxygen QUIET)
