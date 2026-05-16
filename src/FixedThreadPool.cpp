@@ -26,12 +26,11 @@ void FixedThreadPool::enqueue(std::function<void()> task) {
     {
         std::unique_lock<std::mutex> lock(m_mutex);
         if (m_isShutdown) {
-            // This is what EXPECT_THROW is looking for
             throw std::runtime_error("ThreadPool is shut down");
         }
         m_taskQueue.emplace(std::move(task));
+        m_cv.notify_one(); 
     }
-    m_cv.notify_one();
 }
 
 void FixedThreadPool::workerLoop() {
@@ -57,13 +56,15 @@ void FixedThreadPool::workerLoop() {
 }
 
 void FixedThreadPool::shutdown() {
-    // If it was already true, exchange returns true and we exit.
-    // If it was false, it sets it to true and we proceed with joining.
-    if (m_isShutdown.exchange(true)) {
-        return;
+    // Set shutdown flag and notify all workers while holding m_mutex
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        if (m_isShutdown) {
+            return;  // Already shutdown
+        }
+        m_isShutdown = true;
+        m_cv.notify_all();  // Wake up all threads to exit
     }
-    
-    m_cv.notify_all(); // Wake up all threads to exit
     
     std::unique_lock<std::mutex> lock(m_workersMutex);
     for (auto& worker : m_workers) {

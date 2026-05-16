@@ -16,7 +16,6 @@
 #include <mutex>
 #include <condition_variable>
 #include <thread>
-#include <atomic>
 
 namespace sk { namespace common { namespace concurrent {
 
@@ -47,7 +46,7 @@ private:
     mutable std::mutex m_workersMutex;
     std::mutex m_mutex;
     std::condition_variable m_cv;
-    std::atomic<bool> m_isShutdown{false};
+    bool m_isShutdown{false};
 };
 
 }}} // namespace sk::common::concurrent
